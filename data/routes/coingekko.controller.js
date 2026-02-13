@@ -18,11 +18,13 @@ const fetchUSDTSupplyData = async (pool) => {
       market_cap_change_percentage_24h 
     } = coin;
 
+    const epochTimestamp = Math.floor(new Date(last_updated).getTime() / 1000);
+
     // 1. Use snake_case to match standard Postgres naming
     // 2. Use $1, $2 to avoid "trailing junk" errors
     const query = `
       INSERT INTO "SUPPLY_USDT" (
-        timestamp, 
+        opentime, 
         circulating_supply, 
         total_supply, 
         market_cap, 
@@ -33,7 +35,7 @@ const fetchUSDTSupplyData = async (pool) => {
     `;
     
     const values = [
-      last_updated,      // Becomes $1 (The ISO string '2026-02-13T...')
+      epochTimestamp,      // Becomes $1 (The ISO string '2026-02-13T...')
       circulating_supply, // Becomes $2
       total_supply,       // Becomes $3
       market_cap,         // Becomes $4

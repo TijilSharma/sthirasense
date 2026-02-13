@@ -7,6 +7,8 @@ import cron from 'node-cron';
 import createWS from './data/binancews.controller.js';
 import { fetchCoinData } from './data/routes/coingekko.controller.js';
 import authRouter from './client/routes/auth.routes.js';
+import apiRouter from './api/api.routes.js';
+import apiGenRouter from './api/apiGen.js';
 
 
 console.log("JWT Secret:", process.env.JWT_SECRET);
@@ -29,6 +31,8 @@ cron.schedule('* * * * *', () => {
 
 app.use(express.json());
 app.use('/v1/auth/', authRouter);
+app.use('/v1/market/', apiRouter);
+app.use('/v1/api/', apiGenRouter);
 
 app.listen(port, ()=>{
     console.log(`Listening on Port: ${port}`)
