@@ -3,8 +3,6 @@ import cron from 'node-cron';
 
 let tickBuffer = {
     USDT: [],
-    BUSD: [],
-    DAI: [],
     FDUSD: []
 };
 

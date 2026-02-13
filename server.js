@@ -19,7 +19,7 @@ const fdusdWS = createWS('FDUSD', 'fdusdusdt@kline_1m');
 cron.schedule('* * * * *', () => {
     // processCoinData('USDT', 'OHCLVUSDT', pool);
     // processCoinData('FDUSD', 'OHCLVFDUSDT', pool);
-    fetchCoinData();
+    fetchCoinData(pool);
 });
 
 
