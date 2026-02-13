@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
 import { Pool } from 'pg';
 import { processCoinData } from './data/routes/data.controller.js';
 import cron from 'node-cron';
@@ -7,12 +8,12 @@ import createWS from './data/binancews.controller.js';
 import { fetchCoinData } from './data/routes/coingekko.controller.js';
 import authRouter from './client/routes/auth.routes.js';
 
-dotenv.config();
-console.log("Redirect URI:", process.env.GOOGLE_REDIRECT_URI);
+
+console.log("JWT Secret:", process.env.JWT_SECRET);
 
 const app = express();
 const port = process.env.PORT || 3000;
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.DB_URI,
 });
 

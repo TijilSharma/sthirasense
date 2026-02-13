@@ -1,26 +1,29 @@
-import express from 'express';
-import crypto from 'crypto';
+import express from "express";
+import crypto from "crypto";
+import { pool } from "../../server.js";
+import { generateToken } from "../utils/jwt.js";
+import { SendResponse } from "../utils/helper.js";
 // import dotenv from 'dotenv';
 
 // dotenv.config();
 
-export const googleAuthController = (req, res)=>{
-    const state = crypto.randomBytes(32).toString('hex');
+export const googleAuthController = (req, res) => {
+  const state = crypto.randomBytes(32).toString("hex");
 
-    const params = new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-        response_type: 'code',
-        scope: 'openid email profile',
-        state: state,
-        access_type: 'offline',
-        prompt: 'consent'
-    });
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    state: state,
+    access_type: "offline",
+    prompt: "consent",
+  });
 
-    console.log(`Redirecting to Google OAuth with state: ${state}`, process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_REDIRECT_URI);
+  // console.log(`Redirecting to Google OAuth with state: ${state}`, process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_REDIRECT_URI);
 
-    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
-}
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+};
 
 export const googleAuthVerifier = async (req, res) => {
   const { code } = req.query;
@@ -33,15 +36,15 @@ export const googleAuthVerifier = async (req, res) => {
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         code,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-        grant_type: "authorization_code"
-      })
+        grant_type: "authorization_code",
+      }),
     });
 
     const tokenData = await tokenResponse.json();
@@ -53,20 +56,39 @@ export const googleAuthVerifier = async (req, res) => {
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
     );
 
     const userData = await userResponse.json();
 
-    console.log(userData);
+    const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [
+      userData.email,
+    ]);
 
-    // Here create session / JWT
-    res.json(userData);
+    if (userCheck.rows.length === 0) {
+      await pool.query("INSERT INTO users (email, name) VALUES ($1, $2)", [
+        userData.email,
+        userData.name,
+      ]);
+      const fetchData = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [userData.email],
+      );
+      const token = generateToken({id:fetchData.rows[0].id});
+      SendResponse(res, 200, true, "Registration Succesfull", {token});
+    } else {
+      const fetchData = await pool.query(
+        "SELECT * FROM users WHERE email = $1",
+        [userData.email],
+      );
+      const token = generateToken({id:fetchData.rows[0].id});
+      SendResponse(res, 200, true, "Login Succesfull", {token});
 
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).send("Auth failed");
+    SendResponse(res, 500, false, "Internal Server Error");
   }
-}
+};
