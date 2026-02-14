@@ -68,9 +68,9 @@ export const googleAuthVerifier = async (req, res) => {
     ]);
 
     if (userCheck.rows.length === 0) {
-      await pool.query("INSERT INTO users (email, name) VALUES ($1, $2)", [
-        userData.email,
+      await pool.query("INSERT INTO users (username, email) VALUES ($1, $2)", [
         userData.name,
+        userData.email,
       ]);
       const fetchData = await pool.query(
         "SELECT * FROM users WHERE email = $1",
