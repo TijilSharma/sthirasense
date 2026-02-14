@@ -24,15 +24,15 @@ export const pool = new Pool({
 
 const usdtWS = createWS('USDT', 'usdcusdt@kline_1m');
 const fdusdWS = createWS('FDUSD', 'fdusdusdt@kline_1m');
-const socket = connectWS();
+// const socket = connectWS();
 
 cron.schedule('* * * * *', async () => {
     let data = await processCoinData('USDT');
     fetchUSDTSupplyData('USDT','tether', data, pool);
     const payload = await sendCoinData('USDT', 'USDT', pool);
-    if (payload) {
-        socket.emit('ml_data', payload);
-    }
+    // if (payload) {
+    //     socket.emit('ml_data', payload);
+    // }
     
 });
 
