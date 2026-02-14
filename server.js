@@ -14,7 +14,7 @@ import { sendCoinData } from './model/sendCoinData.js';
 
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 export const pool = new Pool({
   connectionString: process.env.DB_URI,
 });
