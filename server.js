@@ -11,6 +11,7 @@ import apiRouter from './api/api.routes.js';
 import apiGenRouter from './api/apiGen.js';
 import { connectWS } from './model/ws.mode.js';
 import { sendCoinData } from './model/sendCoinData.js';
+import { SendResponse } from './client/utils/helper.js';
 
 
 const app = express();
@@ -39,6 +40,9 @@ app.use(express.json());
 app.use('/v1/auth/', authRouter);
 app.use('/v1/market/', apiRouter);
 app.use('/v1/api/', apiGenRouter);
+app.use('/v1',(req,res)=>{
+    SendResponse(res, 200, true, "API is working");
+})
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Listening on ${PORT}`);
