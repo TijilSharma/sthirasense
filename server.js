@@ -40,6 +40,6 @@ app.use('/v1/auth/', authRouter);
 app.use('/v1/market/', apiRouter);
 app.use('/v1/api/', apiGenRouter);
 
-app.listen(port, ()=>{
-    console.log(`Listening on Port: ${port}`)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Listening on ${PORT}`);
 });
