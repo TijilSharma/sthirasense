@@ -5,10 +5,12 @@ import { Pool } from 'pg';
 import { processCoinData } from './data/routes/data.controller.js';
 import cron from 'node-cron';
 import createWS from './data/binancews.controller.js';
-import { fetchCoinData } from './data/routes/coingekko.controller.js';
+import { fetchUSDTSupplyData } from './data/routes/coingekko.controller.js';
 import authRouter from './client/routes/auth.routes.js';
 import apiRouter from './api/api.routes.js';
 import apiGenRouter from './api/apiGen.js';
+import { connectWS } from './model/ws.mode.js';
+import { sendCoinData } from './model/sendCoinData.js';
 
 
 console.log("JWT Secret:", process.env.JWT_SECRET);
@@ -19,13 +21,19 @@ export const pool = new Pool({
   connectionString: process.env.DB_URI,
 });
 
+
 const usdtWS = createWS('USDT', 'usdcusdt@kline_1m');
 const fdusdWS = createWS('FDUSD', 'fdusdusdt@kline_1m');
+const socket = connectWS();
 
-cron.schedule('* * * * *', () => {
-    processCoinData('USDT', 'OHCLVUSDT', pool);
-    processCoinData('FDUSD', 'OHCLVFDUSDT', pool);
-    fetchCoinData(pool);
+cron.schedule('* * * * *', async () => {
+    let data = await processCoinData('USDT');
+    fetchUSDTSupplyData('USDT','tether', data, pool);
+    const payload = await sendCoinData('USDT', 'USDT', pool);
+    if (payload) {
+        socket.emit('ml_data', payload);
+    }
+    
 });
 
 
