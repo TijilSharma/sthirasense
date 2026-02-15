@@ -5,7 +5,7 @@ import { getMarketData } from './api.controller.js';
 
 const apiRouter = Router();
 
-apiRouter.use(apiKeyAuth);
+// apiRouter.use(apiKeyAuth);
 apiRouter.get('/:symbol/:interval', getMarketData);
 
 export default apiRouter;
