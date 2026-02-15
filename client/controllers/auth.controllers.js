@@ -77,14 +77,14 @@ export const googleAuthVerifier = async (req, res) => {
         [userData.email],
       );
       const token = generateToken({id:fetchData.rows[0].id});
-      return res.redirect(`${process.env.FRONTEND_URL}/api/auth/google/callback?token=${token}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/auth?token=${token}`);
     } else {
       const fetchData = await pool.query(
         "SELECT * FROM users WHERE email = $1",
         [userData.email],
       );
       const token = generateToken({id:fetchData.rows[0].id});
-     return res.redirect(`${process.env.FRONTEND_URL}/api/auth/google/callback?token=${token}`);
+     return res.redirect(`${process.env.FRONTEND_URL}/auth?token=${token}`);
     }
   } catch (err) {
     console.error(err);
