@@ -1,6 +1,7 @@
 import { pool } from "../server.js";
+import { SendResponse } from "../client/utils/helper.js";
 
-export async function getMarketData(req, res) {
+export async function   getMarketData(req, res) {
   try {
     const { symbol, interval } = req.params;
 
@@ -8,18 +9,17 @@ export async function getMarketData(req, res) {
 
     const result = await pool.query(
       `SELECT * FROM "${tableName}"
-   ORDER BY opentime DESC
+   ORDER BY open_time DESC
    LIMIT 100`
     );
 
-    res.json({
+    return SendResponse(res, 200, true, "Market data retrieved successfully", {
       symbol,
       interval,
-      tier: req.apiUser.tier,
       data: result.rows,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    return SendResponse(res, 500, false, "Server error");
   }
 }

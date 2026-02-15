@@ -7,5 +7,6 @@ const apiRouter = Router();
 
 // apiRouter.use(apiKeyAuth);
 apiRouter.get('/:symbol/:interval', getMarketData);
+apiRouter.get('/', getMarketData);
 
 export default apiRouter;

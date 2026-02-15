@@ -39,11 +39,11 @@ cron.schedule('* * * * *', async () => {
 
 app.use(express.json());
 app.use('/v1/auth/', authRouter);
-app.use('/v1/market/', apiRouter);
+app.use('/v1/market', apiRouter);
 app.use('/v1/api/', apiGenRouter);
 app.use('/v1/', outputRouter);
-app.use('/v1',(req,res)=>{
-    SendResponse(res, 200, true, "API is working");
+app.get('/v1',(req,res)=>{
+    return SendResponse(res, 200, true, "API is working");
 })
 
 app.listen(PORT, "0.0.0.0", () => {
