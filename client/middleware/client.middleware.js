@@ -3,11 +3,11 @@ import { SendResponse } from "../utils/helper.js";
 export function checkClientAuth(req, res, next) {
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
-        return SendResponse(res, 401, "Authorization header missing");
+        return SendResponse(res, 401, false, "Authorization header missing");
     }
     const token = authHeader.split(' ')[1];
     if (!token) {
-        return SendResponse(res, 401, "Token missing");
+        return SendResponse(res, 401, false, "Token missing");
     }
     try {
         const decoded = verifyToken(token);
@@ -16,6 +16,6 @@ export function checkClientAuth(req, res, next) {
     }
     catch (err) {
         console.error("Token verification failed:", err);
-        return SendResponse(res, 403, "Invalid token");
+        return SendResponse(res, 403, false, "Invalid token");
     }
 }
