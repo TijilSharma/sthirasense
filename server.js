@@ -12,6 +12,7 @@ import apiGenRouter from './api/apiGen.js';
 import { connectWS } from './model/ws.mode.js';
 import { sendCoinData } from './model/sendCoinData.js';
 import { SendResponse } from './client/utils/helper.js';
+import outputRouter from './client/routes/output.route.js';
 
 
 const app = express();
@@ -23,15 +24,15 @@ export const pool = new Pool({
 
 const usdtWS = createWS('USDT', 'usdcusdt@kline_1m');
 const fdusdWS = createWS('FDUSD', 'fdusdusdt@kline_1m');
-// const socket = connectWS();
+const socket = connectWS();
 
 cron.schedule('* * * * *', async () => {
     let data = await processCoinData('USDT');
     fetchUSDTSupplyData('USDT','tether', data, pool);
     const payload = await sendCoinData('USDT', 'USDT', pool);
-    // if (payload) {
-    //     socket.emit('ml_data', payload);
-    // }
+    if (payload) {
+        socket.emit('ml_data', payload);
+    }
     
 });
 
@@ -40,6 +41,7 @@ app.use(express.json());
 app.use('/v1/auth/', authRouter);
 app.use('/v1/market/', apiRouter);
 app.use('/v1/api/', apiGenRouter);
+app.use('/v1/', outputRouter);
 app.use('/v1',(req,res)=>{
     SendResponse(res, 200, true, "API is working");
 })
