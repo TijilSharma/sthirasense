@@ -4,7 +4,7 @@ export async function getMarketData(req, res) {
   try {
     const { symbol, interval } = req.params;
 
-    const tableName = `OHCLV${symbol}`;
+    const tableName = `usdt`;
 
     const result = await pool.query(
       `SELECT * FROM "${tableName}"
