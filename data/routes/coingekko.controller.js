@@ -1,76 +1,93 @@
 const fetchUSDTSupplyData = async (symbol, name, ohlcvData, pool) => {
-  // ohlcvData = { opentime, open, high, low, close, volume, closetime }
   const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${name}&x_cg_demo_api-key=${process.env.COIN_GEKKO_API}`;
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-    
-    const coinData = await response.json();
-    if (!coinData || coinData.length === 0) throw new Error("No data from CoinGecko");
+  const MAX_RETRIES = 5;
 
-    const coin = coinData[0];
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(`Rate limited (429), attempt ${attempt}`);
+        } else {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+      }
 
-    // Destructure only needed fields
-    const { 
-      last_updated, 
-      market_cap, 
-      circulating_supply, 
-      total_supply, 
-      total_volume,            // use as quote_volume
-      price_change_percentage_24h, 
-      market_cap_change_percentage_24h 
-    } = coin;
+      const coinData = await response.json();
+      if (!coinData || coinData.length === 0) throw new Error("No data from CoinGecko");
 
-    const epochTimestamp = Math.floor(new Date(last_updated).getTime() / 1000);
+      const coin = coinData[0];
 
-    // Prepare SQL query with all fields your feature engine expects
-    const query = `
-      INSERT INTO ${symbol} (
-        open_time,
-        open,
-        high,
-        low,
-        close,
-        volume,
-        close_time,
-        quote_volume,
-        trades,
-        taker_base,
-        taker_quote,
-        market_cap,
-        circulating_supply,
-        total_supply,
-        price_change_percentage_24h,
-        market_cap_change_percentage_24h
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-    `;
+      const { 
+        last_updated, 
+        market_cap, 
+        circulating_supply, 
+        total_supply, 
+        total_volume, 
+        price_change_percentage_24h, 
+        market_cap_change_percentage_24h 
+      } = coin;
 
-    const values = [
-      ohlcvData.opentime,                 // $1
-      ohlcvData.open,                     // $2
-      ohlcvData.high,                     // $3
-      ohlcvData.low,                      // $4
-      ohlcvData.close,                    // $5
-      ohlcvData.volume,                   // $6
-      ohlcvData.closetime,                // $7
-      total_volume || 0,                  // $8 quote_volume
-      null,                               // $9 trades (CoinGecko doesn't provide)
-      0,                                  // $10 taker_base (default 0)
-      0,                                  // $11 taker_quote (default 0)
-      market_cap,                         // $12
-      circulating_supply,                 // $13
-      total_supply,                       // $14
-      price_change_percentage_24h,        // $15
-      market_cap_change_percentage_24h    // $16
-    ];
+      const query = `
+        INSERT INTO ${symbol} (
+          open_time,
+          open,
+          high,
+          low,
+          close,
+          volume,
+          close_time,
+          quote_volume,
+          trades,
+          taker_base,
+          taker_quote,
+          market_cap,
+          circulating_supply,
+          total_supply,
+          price_change_percentage_24h,
+          market_cap_change_percentage_24h
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      `;
 
-    await pool.query(query, values);
-    console.log(`[Gecko] USDT + OHLCV + market data saved successfully.`);
+      const values = [
+        ohlcvData.opentime,
+        ohlcvData.open,
+        ohlcvData.high,
+        ohlcvData.low,
+        ohlcvData.close,
+        ohlcvData.volume,
+        ohlcvData.closetime,
+        total_volume || 0,
+        null,
+        0,
+        0,
+        market_cap || 0,
+        circulating_supply || 0,
+        total_supply || 0,
+        price_change_percentage_24h || 0,
+        market_cap_change_percentage_24h || 0
+      ];
 
-  } catch (err) {
-    console.error('[Gecko Error]:', err.message);
+      await pool.query(query, values);
+      console.log(`[Gecko] USDT + OHLCV + market data saved successfully.`);
+      break; // success, exit retry loop
+
+    } catch (err) {
+      console.error(`[Gecko Error]: ${err.message}`);
+
+      if (attempt === MAX_RETRIES) {
+        console.error(`[Gecko Error]: Max retries reached. Skipping this symbol.`);
+        break;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s, 8s...
+      const waitTime = 1000 * 2 ** (attempt - 1);
+      console.log(`[Gecko] Retrying in ${waitTime / 1000}s...`);
+      await new Promise(r => setTimeout(r, waitTime));
+    }
   }
 };
 
